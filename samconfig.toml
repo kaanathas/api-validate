@@ -1,0 +1,12 @@
+version = 0.1
+[default]
+[default.deploy]
+[default.deploy.parameters]
+stack_name = "gw-test-vali14"
+s3_bucket = "aws-sam-cli-managed-default-samclisourcebucket-1qvjvrxo389yg"
+s3_prefix = "gw-test-vali14"
+region = "us-east-2"
+confirm_changeset = true
+capabilities = "CAPABILITY_NAMED_IAM"
+parameter_overrides = "operationName=\"testoperationName\" restApiName=\"gw-validate\" validatorName=\"ValidateReqBody\" validateRequestBody=\"True\" validateRequestParameters=\"True\""
+

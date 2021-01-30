@@ -1,0 +1,142 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: >
+  api-validation
+
+  Sample SAM Template for apivalid
+  
+
+Globals:
+  Function:
+    Timeout: 3
+Parameters:
+  operationName:
+    Type: String
+    Default: testoperationName
+  restApiName:
+    Type: String
+    Default: gw-validate
+  validatorName:
+    Type: String
+    Default: ValidateReqBody
+  validateRequestBody:
+    Type: String
+    Default: true
+  validateRequestParameters:
+    Type: String
+    Default: true
+
+Resources:
+  RestApi:
+    Type: AWS::ApiGateway::RestApi
+    Properties:
+      # Body:
+      #   openapi: 3.0.0
+      #   info:
+      #     title: Sample API
+      #   paths:
+      #     /gw:
+      #       post:
+      #         summary: Test gw validation
+      #         description: This is have validation 
+      Name: !Ref restApiName
+
+  Gwtest:
+    Type: 'AWS::ApiGateway::Resource'
+    Properties:
+      RestApiId: !Ref RestApi
+      ParentId: !GetAtt 
+        - RestApi
+        - RootResourceId
+      PathPart: gwtest
+
+
+  Method:
+    Type: AWS::ApiGateway::Method
+    Properties:
+      HttpMethod: POST
+      ResourceId: !Ref Gwtest
+      RestApiId: !Ref RestApi
+      AuthorizationType: NONE
+      RequestModels:
+        application/json: !Ref PetsModelNoFlatten
+      Integration:
+        Type: MOCK
+        RequestTemplates:
+          application/json: | 
+            { statusCode: 200 }
+        IntegrationResponses:
+            - StatusCode: 200
+      MethodResponses:
+        - StatusCode: 200
+      RequestValidatorId: !Ref RequestValidator
+      OperationName: !Ref operationName
+  RequestValidator:
+    Type: AWS::ApiGateway::RequestValidator
+    Properties:
+      Name: !Ref validatorName
+      RestApiId: !Ref RestApi
+      ValidateRequestBody: true
+      ValidateRequestParameters: !Ref validateRequestParameters
+  Dev:
+    Type: AWS::ApiGateway::Stage
+    Properties:
+      StageName: Dev
+      Description: Dev Stage
+      RestApiId: !Ref RestApi
+      DeploymentId: !Ref Deployment
+
+  Deployment:
+    Type: 'AWS::ApiGateway::Deployment'
+    DependsOn: [Method]
+    Properties:
+      RestApiId: !Ref RestApi
+      Description: validation test
+      StageName: dev
+
+  PetsModelNoFlatten:
+    Type: 'AWS::ApiGateway::Model'
+    Properties:
+      RestApiId: !Ref RestApi
+      ContentType: application/json
+      Description: Schema for Pets example
+      Name: PetsModelNoFlatten
+      Schema:
+        $schema: 'http://json-schema.org/draft-04/schema#'
+        title: PetsModel
+        type: array
+        minItems: 1
+        items:
+          required: [number,class]
+          type: object
+          properties:
+            number:
+              type: number
+            class:
+              type: string
+            salesPrice:
+              type: number
+  
+
+  # GwValidateFunction:
+  #   Type: AWS::Serverless::Function 
+  #   Properties:
+  #     FunctionName: "api-gw-validation"
+  #     Role: arn:aws:iam::499429500149:role/service-role/p8-LambdaExecutor
+  #     Handler: src/index.handler
+  #     Runtime: nodejs12.x
+  #     Events:
+  #       ApivalidateTest:
+  #         Type: Api
+  #         Properties:
+  #           Path: /gw
+  #           Method: post
+  #           RestApiId: 
+  #             Ref: RestApi
+
+Outputs:
+  RootResourceId:
+    Value: !GetAtt RestApi.RootResourceId
+
+
+  
